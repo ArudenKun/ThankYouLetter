@@ -1,0 +1,89 @@
+﻿<suki:SukiWindow
+    x:Class="ThankYouLetter.Views.Windows.ErrorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:suki="https://github.com/kikipoulet/SukiUI"
+    xmlns:vw="clr-namespace:ThankYouLetter.Views.Windows"
+    Title="Error"
+    Width="600"
+    Height="480"
+    MinWidth="400"
+    MinHeight="200"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vw:ErrorView"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <suki:SukiWindow.LogoContent>
+        <!--  <Image  -->
+        <!--  Width="18"  -->
+        <!--  Height="18"  -->
+        <!--  Source="{x:Static helper:IconHelper.Icon}"  -->
+        <!--  Stretch="Uniform" />  -->
+    </suki:SukiWindow.LogoContent>
+
+    <Grid RowDefinitions="*,Auto">
+        <Grid
+            Grid.Row="0"
+            Margin="8,4,8,4"
+            RowDefinitions="Auto,*">
+            <suki:GlassCard Grid.Row="0">
+                <suki:GroupBox>
+                    <suki:GroupBox.Header>
+                        <TextBlock FontWeight="Bold" Text="Error Prolog" />
+                    </suki:GroupBox.Header>
+                    <ScrollViewer
+                        MaxHeight="150"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            Text="{Binding ExceptionMessage}"
+                            TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </suki:GroupBox>
+            </suki:GlassCard>
+            <suki:GlassCard Grid.Row="1">
+                <suki:GroupBox>
+                    <suki:GroupBox.Header>
+                        <TextBlock FontWeight="Bold" Text="Error Details" />
+
+                    </suki:GroupBox.Header>
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            Text="{Binding ExceptionDetails}"
+                            TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </suki:GroupBox>
+
+            </suki:GlassCard>
+        </Grid>
+
+
+        <Border
+            Grid.Row="1"
+            Padding="12,0"
+            Background="{DynamicResource ErrorViewBackgroundBrush}">
+            <Grid MinHeight="40" VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <!--  ReSharper disable once Xaml.StyleClassNotFound  -->
+                    <Button
+                        Classes="Basic"
+                        Click="CopyErrorMessage_Click"
+                        Content="Copy Error Message"
+                        ToolTip.Tip="Copy To Clipboard" />
+
+                    <!--  <Button  -->
+                    <!--  Margin="12,0,0,0"  -->
+                    <!--  Classes="Basic"  -->
+                    <!--  Command="{x:Static utilities:UrlUtilities.OpenLink}"  -->
+                    <!--  CommandParameter="{x:Static helper:MFAUrls.NewIssueUri}"  -->
+                    <!--  Content="{markup:I18n {x:Static helper:LangKeys.ErrorFeedbackLinkText}}" />  -->
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</suki:SukiWindow>

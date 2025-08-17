@@ -1,0 +1,118 @@
+﻿using System;
+using System.Text;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using SukiUI.Controls;
+using ThankYouLetter.Common;
+using ThankYouLetter.Common.Helpers;
+using ThankYouLetter.Dependency;
+
+namespace ThankYouLetter.Views.Windows;
+
+[Singleton]
+public partial class ErrorView : SukiWindow
+{
+    private readonly bool _shouldExit;
+    private static bool _existed;
+    public static readonly StyledProperty<string?> ExceptionMessageProperty =
+        AvaloniaProperty.Register<ErrorView, string?>(nameof(ExceptionMessage), string.Empty);
+
+    public string? ExceptionMessage
+    {
+        get => GetValue(ExceptionMessageProperty);
+        set => SetValue(ExceptionMessageProperty, value);
+    }
+
+    public static readonly StyledProperty<string?> ExceptionDetailsProperty =
+        AvaloniaProperty.Register<ErrorView, string?>(nameof(ExceptionDetails), string.Empty);
+
+    public string? ExceptionDetails
+    {
+        get => GetValue(ExceptionDetailsProperty);
+        set => SetValue(ExceptionDetailsProperty, value);
+    }
+
+    // 构造函数
+    public ErrorView()
+    {
+        DataContext = this;
+        InitializeComponent();
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        _existed = false;
+        base.OnClosing(e);
+    }
+
+    public ErrorView(Exception? exception, bool shouldExit = false)
+        : this()
+    {
+        var errorStr = new StringBuilder();
+        while (exception != null)
+        {
+            errorStr.Append(exception.Message);
+            if (exception.InnerException != null)
+            {
+                errorStr.AppendLine();
+                exception = exception.InnerException;
+            }
+            else
+                break;
+        }
+
+        ExceptionMessage = errorStr.ToString();
+        ExceptionDetails = exception?.ToString();
+        _shouldExit = shouldExit;
+    }
+
+    // 显示异常窗口
+    public static void ShowException(Exception e, bool shouldExit = false)
+    {
+        if (_existed)
+            return;
+
+        DispatcherHelper.RunOnMainThread(() =>
+        {
+            var errorView = new ErrorView(e, shouldExit);
+            errorView.ShowDialog(Instances.RootView);
+            _existed = true;
+        });
+    }
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+    // 复制到剪贴板
+    private void CopyErrorMessage_Click(object sender, RoutedEventArgs e)
+    {
+        var text = $"{ExceptionMessage}\n\n{ExceptionDetails}";
+        TaskManager.RunTaskAsync(async () =>
+        {
+            DispatcherHelper.PostOnMainThread(async () => await Clipboard?.SetTextAsync(text));
+
+            // 显示提示（使用Avalonia原生ToolTip）
+            if (sender is Control control)
+            {
+                DispatcherHelper.PostOnMainThread(() =>
+                    ToolTip.SetTip(control, "Copied To Clipboard")
+                );
+                DispatcherHelper.PostOnMainThread(() => ToolTip.SetIsOpen(control, true));
+                await Task.Delay(1000);
+                DispatcherHelper.PostOnMainThread(() => ToolTip.SetIsOpen(control, false));
+                DispatcherHelper.PostOnMainThread(() =>
+                    ToolTip.SetTip(control, "Copy To Clipboard")
+                );
+            }
+        });
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        if (_shouldExit)
+        {
+            App.ApplicationLifetime.TryShutdown();
+        }
+        base.OnClosed(e);
+    }
+}
