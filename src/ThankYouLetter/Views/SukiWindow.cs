@@ -16,4 +16,6 @@ public abstract class SukiWindow<TViewModel> : SukiWindow, IView<TViewModel>
             );
         set => base.DataContext = value;
     }
+
+    public TViewModel ViewModel => DataContext;
 }

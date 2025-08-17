@@ -88,8 +88,8 @@ public static class TaskManager
     /// <param name="prompt">日志提示</param>
     /// <param name="catchException">是否捕获异常</param>
     /// <param name="shouldLog">异常是否写入日志</param>
-    public async static Task RunTaskAsync(
-        Action? action,
+    public static async Task RunTaskAsync(
+        Action action,
         Action? handleError = null,
         string name = nameof(Action),
         string prompt = ">>> ",

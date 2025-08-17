@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -12,6 +13,7 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="AsyncAwaitBestPractices" Version="9.0.0" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.4" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Include="Avalonia.Diagnostics" Version="11.3.4">
@@ -21,26 +23,23 @@
     <PackageReference Include="Cogwheel" Version="2.1.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
-    <PackageReference Include="Serilog.Sinks.AsyncFile" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="ServiceScan.SourceGenerator" Version="2.2.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="SukiUI" Version="6.0.2" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="11.3.2" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
     <Folder Include="ViewModels\Pages\" />
     <Folder Include="Views\Pages\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference
-      Include="..\Generator.LazyStatic\Generator.LazyStatic.csproj"
-      OutputItemType="Analyzer"
-      ExcludeAssets="runtime;build;native;contentfiles"
-      ReferenceOutputAssembly="false"
-    />
   </ItemGroup>
 </Project>

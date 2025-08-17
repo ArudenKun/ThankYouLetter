@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ServiceScan.SourceGenerator;
 using ThankYouLetter.Dependency;
-using ThankYouLetter.Services;
 using ThankYouLetter.ViewModels;
 using ThankYouLetter.Views;
 
@@ -15,18 +14,6 @@ namespace ThankYouLetter;
 
 public static partial class DependencyInjection
 {
-    public const string LogOutputTemplate =
-        "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}";
-
-    public static IServiceCollection ConfigureThankYouLetter(this IServiceCollection services)
-    {
-        services.AddServices();
-        services.AddViews();
-        services.AddViewModels();
-        services.TryAddTransient(typeof(Lazy<>), typeof(LazyService<>));
-        return services;
-    }
-
     [GenerateServiceRegistrations(
         AssignableTo = typeof(ISingletonDependency),
         AsSelf = true,

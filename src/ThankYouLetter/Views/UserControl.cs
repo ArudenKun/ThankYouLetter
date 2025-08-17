@@ -16,4 +16,6 @@ public abstract class UserControl<TViewModel> : UserControl, IView<TViewModel>
             );
         set => base.DataContext = value;
     }
+
+    public TViewModel ViewModel => DataContext;
 }

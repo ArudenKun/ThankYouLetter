@@ -2,12 +2,21 @@
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
+using SukiUI.Dialogs;
+using SukiUI.Toasts;
 
 namespace ThankYouLetter.ViewModels;
 
 public abstract class ViewModel : ObservableRecipient, IDisposable
 {
     private bool _isDisposed;
+
+    public ISukiToastManager ToastManager { get; } =
+        App.Services.GetRequiredService<Lazy<ISukiToastManager>>().Value;
+
+    public ISukiDialogManager DialogManager { get; } =
+        App.Services.GetRequiredService<Lazy<ISukiDialogManager>>().Value;
 
     public virtual void OnLoaded() { }
 

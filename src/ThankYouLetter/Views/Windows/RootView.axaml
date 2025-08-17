@@ -11,7 +11,13 @@
     d:DesignWidth="800"
     x:DataType="vmw:RootViewModel"
     Icon="/Assets/avalonia-logo.ico"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+
+    <suki:SukiWindow.Hosts>
+        <suki:SukiDialogHost Manager="{Binding DialogManager}" />
+        <suki:SukiToastHost Manager="{Binding ToastManager}" />
+    </suki:SukiWindow.Hosts>
 
     <StackPanel>
         <TextBlock

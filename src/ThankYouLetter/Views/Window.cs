@@ -16,4 +16,6 @@ public abstract class Window<TViewModel> : Window, IView<TViewModel>
             );
         set => base.DataContext = value;
     }
+
+    public TViewModel ViewModel => DataContext;
 }

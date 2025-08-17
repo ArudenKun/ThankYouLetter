@@ -1,9 +1,7 @@
 ﻿using System;
-using System.IO;
-using System.Xml;
 using Avalonia;
 using Avalonia.Controls;
-using ThankYouLetter.ViewModels.Windows;
+using ThankYouLetter.Common.Helpers;
 
 namespace ThankYouLetter;
 
@@ -22,8 +20,7 @@ internal static class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            // LoggerHelper.Error($"总异常捕获：{e}");
+            LogHelper.Error(e, "Global Error");
         }
     }
 

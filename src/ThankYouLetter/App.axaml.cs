@@ -1,15 +1,23 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
+using Avalonia.Input.Platform;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using SukiUI.Dialogs;
+using SukiUI.Toasts;
+using ThankYouLetter.Common.Helpers;
+using ThankYouLetter.Services;
 using ThankYouLetter.ViewModels.Windows;
 using ThankYouLetter.Views.Windows;
 
@@ -17,6 +25,14 @@ namespace ThankYouLetter;
 
 public sealed class App : Application
 {
+    /// <summary>
+    /// Mutex to prevent multiple instances of the application from running.
+    /// </summary>
+    private static readonly Mutex AppMutex = new(
+        true,
+        $"Mutex_{Environment.UserDomainName}_{Environment.UserName}_{typeof(App).FullName}_{{10BD95D3-492E-4A2E-A734-2002B6EE798B}}"
+    );
+
     public static IServiceProvider Services { get; private set; } = null!;
 
     // ReSharper disable once ArrangeModifiersOrder
@@ -29,13 +45,27 @@ public sealed class App : Application
         (IClassicDesktopStyleApplicationLifetime?)Application.Current?.ApplicationLifetime
         ?? throw new InvalidOperationException("Application is not yet initialized");
 
+    public static Window RootView =>
+        ApplicationLifetime.MainWindow
+        ?? throw new InvalidOperationException("Application is not yet initialized");
+
     public override void Initialize()
     {
+        LogHelper.Initialize();
         AvaloniaXamlLoader.Load(this);
 
-        TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
-        AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
-        Dispatcher.UIThread.UnhandledException += DispatcherUIThreadOnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            HandleUnhandledException((Exception)e.ExceptionObject, "App");
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            e.SetObserved();
+            HandleUnhandledException(e.Exception, "Task");
+        };
+        Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            e.Handled = true;
+            HandleUnhandledException(e.Exception, "UI");
+        };
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -49,10 +79,23 @@ public sealed class App : Application
 
         var services = new ServiceCollection();
         services.AddSingleton(desktop);
-        services.ConfigureThankYouLetter();
-        ConfigureServices(services);
-
+        services.AddViews();
+        services.AddViewModels();
         services.AddSingleton<ViewLocator>();
+
+        services.AddSingleton<TopLevel>(sp => sp.GetRequiredService<RootView>());
+        services.AddSingleton<IClipboard>(sp => sp.GetRequiredService<TopLevel>().Clipboard!);
+        services.AddSingleton<IStorageProvider>(sp =>
+            sp.GetRequiredService<TopLevel>().StorageProvider
+        );
+
+        services.AddServices();
+        services.AddTransient(typeof(Lazy<>), typeof(LazyService<>));
+
+        services.AddSingleton<ISukiDialogManager, SukiDialogManager>();
+        services.AddSingleton<ISukiToastManager, SukiToastManager>();
+
+        services.AddLogging(b => b.ClearProviders().AddSerilog(dispose: true));
 
         Services = services.BuildServiceProvider();
 
@@ -65,114 +108,13 @@ public sealed class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static void ConfigureServices(IServiceCollection services) { }
-
-    private static void TaskSchedulerOnUnobservedTaskException(
-        object? sender,
-        UnobservedTaskExceptionEventArgs e
-    )
+    public static void HandleUnhandledException(Exception ex, string category)
     {
-        try
-        {
-            ErrorView.ShowException(e.Exception);
-            // if (TryIgnoreException(e.Exception, out string errorMessage))
-            // {
-            //     LoggerHelper.Warning(errorMessage);
-            //     LoggerHelper.Info(e.Exception.ToString());
-            // }
-            // else
-            // {
-            //     LoggerHelper.Error(e.Exception);
-            //     ErrorView.ShowException(e.Exception);
-            //
-            //     foreach (var item in e.Exception.InnerExceptions ?? Enumerable.Empty<Exception>())
-            //     {
-            //         LoggerHelper.Error(
-            //             string.Format(
-            //                 "异常类型：{0}{1}来自：{2}{3}异常内容：{4}",
-            //                 item.GetType(),
-            //                 Environment.NewLine,
-            //                 item.Source,
-            //                 Environment.NewLine,
-            //                 item.Message
-            //             )
-            //         );
-            //     }
-            // }
-
-            e.SetObserved();
-        }
-        catch (Exception ex)
-        {
-            // LoggerHelper.Error("处理未观察任务异常时发生错误: " + ex.ToString());
-            e.SetObserved();
-        }
-    }
-
-    private static void CurrentDomainOnUnhandledException(
-        object sender,
-        UnhandledExceptionEventArgs e
-    )
-    {
-        try
-        {
-            // if (
-            //     e.ExceptionObject is Exception ex
-            //     && TryIgnoreException(ex, out string errorMessage)
-            // )
-            // {
-            //     LoggerHelper.Warning(errorMessage);
-            //     LoggerHelper.Error(ex.ToString());
-            //     return;
-            // }
-
-            var sbEx = new StringBuilder();
-            if (e.IsTerminating)
-                sbEx.Append("非UI线程发生致命错误");
-            else
-                sbEx.Append("非UI线程异常：");
-
-            if (e.ExceptionObject is Exception ex2)
-            {
-                ErrorView.ShowException(ex2);
-                sbEx.Append(ex2.Message);
-            }
-            else
-            {
-                sbEx.Append(e.ExceptionObject);
-            }
-            // LoggerHelper.Error(sbEx.ToString());
-        }
-        catch (Exception ex)
-        {
-            // LoggerHelper.Error("处理非UI线程异常时发生错误: " + ex.ToString());
-        }
-    }
-
-    private static void DispatcherUIThreadOnUnhandledException(
-        object sender,
-        DispatcherUnhandledExceptionEventArgs e
-    )
-    {
-        try
-        {
-            // if (TryIgnoreException(e.Exception, out string errorMessage))
-            // {
-            //     LoggerHelper.Warning(errorMessage);
-            //     LoggerHelper.Error(e.Exception.ToString());
-            //     e.Handled = true;
-            //     return;
-            // }
-
-            e.Handled = true;
-            // LoggerHelper.Error(e.Exception);
-            ErrorView.ShowException(e.Exception);
-        }
-        catch (Exception ex)
-        {
-            // LoggerHelper.Error("处理UI线程异常时发生错误: " + ex.ToString());
-            ErrorView.ShowException(ex, true);
-        }
+        var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger(category);
+        var exceptionService = Services.GetRequiredService<ExceptionService>();
+        exceptionService.ShowWindow(ex);
+        logger.LogError(ex, "Unhandled Exception");
     }
 
     private static void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e) { }
